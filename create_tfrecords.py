@@ -13,7 +13,7 @@ flags = tf.app.flags
 flags.DEFINE_string('output_path', '', 'Path to output TFRecord')
 FLAGS = flags.FLAGS
 
-def create_tf_example(df, image_id):
+def create_tf_example(df, img_id):
     image_path = 'data/images/'
     filename = '%06d.png'%img_id
     
@@ -33,13 +33,13 @@ def create_tf_example(df, image_id):
     ymaxs = []
 
     for bbox in np.array(df[['XMin', 'XMax', 'YMin', 'YMax']]):
-        xmins += [bbox[0]]
-        xmaxs += [bbox[1]]
-        ymins += [bbox[2]]
-        ymaxs += [bbox[3]]
+        xmins += [bbox[0]/width]
+        xmaxs += [bbox[1]/width]
+        ymins += [bbox[2]/height]
+        ymaxs += [bbox[3]/height]
     
-    classes_text = [b'Car']*len(example)
-    classes = [1]*len(example)
+    classes_text = [b'Car']*len(df)
+    classes = [1]*len(df)
 
     tf_example = tf.train.Example(features=tf.train.Features(feature={
       'image/height': dataset_util.int64_feature(height),
@@ -62,7 +62,7 @@ def main(_):
     writer = tf.python_io.TFRecordWriter(FLAGS.output_path)
     
     for img_id in range(7481):
-        df = pd.read_csv('labels/%06d.csv'%img_id)
+        df = pd.read_csv('data/labels/%06d.csv'%img_id)
         if df.empty:
             continue
         tf_example = create_tf_example(df, img_id)
