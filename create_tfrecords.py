@@ -1,5 +1,5 @@
 # Borrowed from https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/using_your_own_dataset.md
-# Run 'python create_tfrecords.py --output_path data/kitti_train.record'
+# Run 'python create_tfrecords.py --split train --output_path data/kitti_train.record'
 from __future__ import print_function
 
 import tensorflow as tf
@@ -11,7 +11,14 @@ import numpy as np
 
 flags = tf.app.flags
 flags.DEFINE_string('output_path', '', 'Path to output TFRecord')
+flags.DEFINE_string('split', '', 'split (train/val)')
 FLAGS = flags.FLAGS
+
+def read_split(split):
+    with open('/home/ubuntu/workspace/frustum-pointnets/kitti/image_sets/%s.txt'%split, 'r') as f:
+        lines = f.readlines()
+    ids = list(map(int, lines))
+    return ids
 
 def create_tf_example(df, img_id):
     image_path = 'data/images/'
@@ -61,13 +68,14 @@ def create_tf_example(df, img_id):
 def main(_):
     writer = tf.python_io.TFRecordWriter(FLAGS.output_path)
     
-    for img_id in range(7481):
+    ids = read_split(FLAGS.split)
+    for i, img_id in enumerate(ids):
         df = pd.read_csv('data/labels/%06d.csv'%img_id)
         if df.empty:
             continue
         tf_example = create_tf_example(df, img_id)
         writer.write(tf_example.SerializeToString())
-        print('\rprocessing %d of all %d images'%(img_id+1, 7481), end="")
+        print('\rprocessing %d of all %d images'%(i+1, len(ids)), end="")
     print('\nDone!')
     writer.close()
 
